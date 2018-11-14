@@ -27,12 +27,10 @@ def get_input_data():
     historyid = get_history_id(url, key)
     hist_contents = gi.histories.show_history(historyid, contents=True)
     inputs = {}
-    datacount = 0
     datasets = [dataset for dataset in hist_contents if not dataset['deleted']]
     for dataset in datasets:
         inputs[dataset['name']] = dataset['id']
-        datacount += 1
-    return inputs, datacount
+    return inputs
 
 
 def run_galaxy_workflow(historyid, workflowid, gi):
@@ -54,13 +52,11 @@ def run_galaxy_workflow(historyid, workflowid, gi):
                 label = jsonwf["steps"][str(i)]["label"]
             mydict[label] = gi.workflows.get_workflow_inputs(
                 workflowid, label=label)[0]
-    in_count = 0
     for k, v in mydict.items():
-        datasets = get_input_data()[0]
+        datasets = get_input_data()
         for dname, did in datasets.items():
             if k in dname:
                 datamap[v] = {'src': "hda", 'id': did}
-        in_count += 1
     hist = gi.histories.show_history(historyid)
     state = hist['state_ids']
     dump = json.dumps(state)
