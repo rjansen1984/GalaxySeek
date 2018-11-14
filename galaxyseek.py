@@ -28,7 +28,7 @@ def get_history_id(url, key):
     return history_id
 
 
-def send_data_files(assayname, files):
+def send_data_files(assayname, file):
     """Create a new history with the assay name and 
     send the data files to the Galaxy server.
     
@@ -40,8 +40,7 @@ def send_data_files(assayname, files):
     new_hist_name = assayname
     gi.histories.create_history(name=new_hist_name)
     historyid = get_history_id(url, key)
-    for file in files:
-        gi.tools.upload_file(file, historyid)
+    gi.tools.upload_file(file, historyid)
 
 
 def get_galaxy_instance(url, key):
@@ -63,6 +62,6 @@ def get_galaxy_instance(url, key):
 
 if __name__ == "__main__":
     gi = get_galaxy_instance(url, key)
-    file = sys.argv[1].split(',') # List with data files to send to Galaxy.
+    file = sys.argv[1] # List with data files to send to Galaxy.
     assayname = str(sys.argv[2])
     send_data_files(assayname, file)
