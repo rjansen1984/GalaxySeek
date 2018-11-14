@@ -36,11 +36,13 @@ def send_data_files(assayname, file):
         file: List of files to send to Galaxy.
         historyid: The history to send the files to.
     """
+    file = file.split(',')
     gi = get_galaxy_instance(url, key)
     new_hist_name = assayname
     gi.histories.create_history(name=new_hist_name)
     historyid = get_history_id(url, key)
-    gi.tools.upload_file(file, historyid)
+    for f in file:
+        gi.tools.upload_file(f, historyid)
 
 
 def get_galaxy_instance(url, key):
