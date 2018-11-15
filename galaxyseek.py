@@ -1,3 +1,4 @@
+import os
 import json
 import subprocess
 import sys
@@ -6,9 +7,12 @@ import time
 from subprocess import call
 from bioblend.galaxy import GalaxyInstance
 
-url = sys.argv[3]  # URL of the Galaxy instance
-key = sys.argv[4]  # Galaxy API key
-
+files = sys.argv[1]  # List with data files to send to Galaxy.
+assayname = sys.argv[2] # Name of the assay (used for Galaxy history).
+url = sys.argv[3]  # URL of the Galaxy instance.
+key = sys.argv[4]  # Galaxy API key.
+filenames = sys.argv[5] # List of original filenames.
+workflowid = sys.argv[6] # Name of the workflow to run.
 
 def get_input_data():
     """Get input data based on the selected history.
@@ -57,30 +61,8 @@ def run_galaxy_workflow(historyid, workflowid, gi):
         for dname, did in datasets.items():
             if k in dname:
                 datamap[v] = {'src': "hda", 'id': did}
-    hist = gi.histories.show_history(historyid)
-    state = hist['state_ids']
-    dump = json.dumps(state)
-    status = json.loads(dump)
-    # Stop process after workflow is done
-    while (
-            status['running'] or
-            status['queued'] or
-            status['new'] or
-            status['upload']
-    ):
-        time.sleep(10)
-        hist = gi.histories.show_history(historyid)
-        state = hist['state_ids']
-        dump = json.dumps(state)
-        status = json.loads(dump)
-        if (
-                not status['running'] and
-                not status['queued'] and
-                not status['new'] and
-                not status['upload']
-        ):
-            gi.workflows.run_workflow(
-                workflowid, datamap, history_id=historyid)
+    gi.workflows.run_workflow(
+        workflowid, datamap, history_id=historyid)
 
 
 def get_history_id(url, key):
@@ -98,25 +80,31 @@ def get_history_id(url, key):
     cur_hist = gi.histories.get_current_history()
     current = json.dumps(cur_hist)
     current_hist = json.loads(current)
-    history_id = current_hist['id']
-    return history_id
+    historyid = current_hist['id']
+    return historyid
 
 
-def send_data_files(assayname, file):
-    """Create a new history with the assay name and 
+def send_data_files():
+    """Create a new history with the SEEK assay name and 
     send the data files to the Galaxy server.
 
     Arguments:
+        assayname: The name of the assay used as a history name.
         file: List of files to send to Galaxy.
-        historyid: The history to send the files to.
+        filenames: List of the original filenames.
     """
-    file = file.split(',')
+    filelist = files.split(',')
+    filenamelist = filenames.split(',')
+    pathname = os.path.dirname(sys.argv[0])
     gi = get_galaxy_instance(url, key)
     new_hist_name = assayname
     gi.histories.create_history(name=new_hist_name)
     historyid = get_history_id(url, key)
-    for f in file:
-        gi.tools.upload_file(f, historyid)
+    for nr in range(len(filelist)):
+        newfile = os.path.abspath(pathname) + "/tmp/" + filenamelist[nr]
+        call(["cp " + filelist[nr] + " " + newfile], shell=True)
+        gi.tools.upload_file(newfile, historyid)
+        call(["rm " + newfile], shell=True)
 
 
 def get_galaxy_instance(url, key):
@@ -138,12 +126,7 @@ def get_galaxy_instance(url, key):
 
 if __name__ == "__main__":
     gi = get_galaxy_instance(url, key)
-    file = sys.argv[1]  # List with data files to send to Galaxy.
-    assayname = str(sys.argv[2])
-    send_data_files(assayname, file)
+    send_data_files()
     historyid = get_history_id(url, key)
-    workflows = gi.workflows.get_workflows(name="TestCase_AML")
-    print(workflows)
-    for workflow in workflows:
-        workflowid = workflow['id']
+    get_input_data()
     run_galaxy_workflow(historyid, workflowid, gi)
