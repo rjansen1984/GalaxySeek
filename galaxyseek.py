@@ -18,11 +18,6 @@ def get_input_data():
     """Get input data based on the selected history.
     Find the number of uploaded files and return the id's of the files.
 
-    Arguments:
-        galaxyemail: The Galaxy email address.
-        galaxypass: The Galaxy password.
-        server: The Galaxy server URL.
-
     Returns:
         A list of input files from the Galaxy history and
         the amount of input datasets in the history.
@@ -69,9 +64,8 @@ def get_history_id(url, key):
     """Get the current Galaxy history ID
 
     Arguments:
-        email: The Galaxy email address.
-        password: The Galaxy password.
         url: The Galaxy server URL.
+        key: The Galaxy API key.
 
     Returns:
         The current Galaxy history ID from the logged in user.
@@ -87,11 +81,6 @@ def get_history_id(url, key):
 def send_data_files():
     """Create a new history with the SEEK assay name and 
     send the data files to the Galaxy server.
-
-    Arguments:
-        assayname: The name of the assay used as a history name.
-        file: List of files to send to Galaxy.
-        filenames: List of the original filenames.
     """
     filelist = files.split(',')
     filenamelist = filenames.split(',')
@@ -101,7 +90,7 @@ def send_data_files():
     gi.histories.create_history(name=new_hist_name)
     historyid = get_history_id(url, key)
     for nr in range(len(filelist)):
-        newfile = os.path.abspath(pathname) + "/tmp/" + filenamelist[nr]
+        newfile = os.path.abspath(pathname) + "/filestore/tmp/" + filenamelist[nr]
         call(["cp " + filelist[nr] + " " + newfile], shell=True)
         gi.tools.upload_file(newfile, historyid)
         call(["rm " + newfile], shell=True)
@@ -112,8 +101,7 @@ def get_galaxy_instance(url, key):
 
     Arguments:
         url: The Galaxy URL.
-        email: Email address used on the Galaxy server.
-        password: Password used on the Galaxy server.
+        key: The Galaxy API key.
 
     Returns:
         The Galaxy instance.
